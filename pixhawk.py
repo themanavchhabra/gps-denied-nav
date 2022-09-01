@@ -4,26 +4,31 @@ from geopy.distance import geodesic
 import numpy as np
 import cv2
 
-try:
-    vehicle = connect("127.0.0.1:14550")
-    print("connected")
-except:
-    print("not connected")
+# connection_string = "127.0.0.1:14550"
 
-print(vehicle.attitude.yaw)
-print(vehicle.location.local_frame)
 
-x= vehicle.location.local_frame.north * np.sin(vehicle.attitude.yaw)
-y = vehicle.location.local_frame.east * np.cos(vehicle.attitude.yaw)
-z = -vehicle.location.local_frame.down
-print(x,y,z)
+class Pixhawk():
 
-# Abuja =(9.072264 , 0)
-# Dakar =(14.716677 , 0)
-# #Finally, print the distance between the two sites in kilometers.
-# print("The distance between Abuja and Dakar is: ", geodesic(Abuja,Dakar).km)
+    def __init__(self, connection_string):
+        try:
+            self.vehicle = connect(connection_string)
+            print("connected")
+        except:
+            print("not connected")
+
+    def get_attitude(self):
+        r,p,y = self.vehicle.attitude.roll, self.vehicle.attitude.pitch, self.vehicle.attitude.yaw #gets atttide of drone 
+
+        return((r,p,y))
 
 
 
-# class drone():
-    
+    # print(vehicle.attitude.yaw)
+    # print(vehicle.location.local_frame)
+
+    def actual_distance(self):
+        x= self.vehicle.location.local_frame.north * np.sin(self.vehicle.attitude.yaw)
+        y = self.vehicle.location.local_frame.east * np.cos(self.vehicle.attitude.yaw)
+        z = -self.vehicle.location.local_frame.down
+
+        print(x,y,z)

@@ -4,7 +4,8 @@ import numpy as np
 import math
 from matplotlib import pyplot as plt
 import filters
-
+import calculations
+import pixhawk
 
 # FOV of camera at resolution (1280*720)
 hfov = 73.387
@@ -28,6 +29,9 @@ log_x = open("x.txt", "w")
 log_xfil = open("x_filtered.txt", "w")  
 log_xact = open ("x_actual.txt", "w")   
 # optical_flow_logs = open("optical_flow_logs.txt" , "w") 
+
+calc = calculations.Calculations()
+pix = pixhawk.Pixhawk("127.0.0.1:14550")
 
 
 class Visual_Odometry():
@@ -80,7 +84,7 @@ class Visual_Odometry():
             avg_y = sum((new_points[0:, 0:, 1:2] - old_points[0:, 0:, 1:2]).ravel()) / l # averaging the difference along y axis
             return (avg_x, avg_y)
 
-    def frame_process(self, h, log_x, log_xfil, log_xact, currAngle):
+    def frame_process(self, h, log_x, log_xfil, log_xact):
         """
         Takes frame from the video source. Extracts and tracks features on the frame.
         :param h: current height of the UAV
@@ -92,7 +96,7 @@ class Visual_Odometry():
         _, frame = self.source.read() # reading frame from the source
  #       out.write(frame)
 
-        self.theta = currAngle
+        self.rtheta = pix.get_attitude() #gets the attitude of the drone 
 
         # capturing first features
         if self.old_gray is None: # during the first call of the function as we don't have the old frame and old features
@@ -103,7 +107,8 @@ class Visual_Odometry():
         
         if self.rtheta is not None and self.p0 is not None:
             angle = self.rtheta
-            rmatrix = np.array([[np.cos(angle),-np.sin(angle)],[np.sin(angle),np.cos(angle)]])
+            # rmatrix = np.array([[np.cos(angle),-np.sin(angle)],[np.sin(angle),np.cos(angle)]])
+            rmatrix = calc.rotationMatrix3D(angle[0],angle[1],angle[2]) #gets the rotation matrix from the attitude angles
             self.p0 = np.matmul(self.p0, rmatrix)
 
 
@@ -179,7 +184,7 @@ class Visual_Odometry():
 
         h = self.initial_height
 
-        dis_x, dis_y, n_points = self.frame_process(h, log_x, log_xfil, log_xact, None) # proesssing the video frame ( _test function can be used during simulation.)
+        dis_x, dis_y, n_points = self.frame_process(h, log_x, log_xfil, log_xact) # proesssing the video frame ( _test function can be used during simulation.)
 
 
 
