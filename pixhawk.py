@@ -18,6 +18,8 @@ class Pixhawk():
 
     def get_attitude(self):
         r,p,y = self.vehicle.attitude.roll, self.vehicle.attitude.pitch, self.vehicle.attitude.yaw #gets atttide of drone 
+        print("got attitude")
+        print((r,p,y))
 
         return((r,p,y))
 

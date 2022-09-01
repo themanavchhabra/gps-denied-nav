@@ -105,9 +105,10 @@ class Visual_Odometry():
                 [40, 40], dtype=np.float32) # finding features on the frame using Shi Tomasi algorithm, leaving a pixel width of 40 pixels on the border of the frame
             return 0, 0, len(self.p0) #returning the home location and (0, 0) as (dx, dy) as no fetures were tracked in the first call
         
-        if self.rtheta is not None and self.p0 is not None:
+        if self.rtheta is not None and self.p0 is not None and self.old_gray is None:
             angle = self.rtheta
             # rmatrix = np.array([[np.cos(angle),-np.sin(angle)],[np.sin(angle),np.cos(angle)]])
+            print(angle[0],angle[1],angle[2])
             rmatrix = calc.rotationMatrix3D(angle[0],angle[1],angle[2]) #gets the rotation matrix from the attitude angles
             self.p0 = np.matmul(self.p0, rmatrix)
 
