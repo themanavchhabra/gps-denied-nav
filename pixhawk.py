@@ -28,9 +28,9 @@ class Pixhawk():
     # print(vehicle.attitude.yaw)
     # print(vehicle.location.local_frame)
 
-    def actual_distance(self):
-        x= self.vehicle.location.local_frame.north * np.sin(self.vehicle.attitude.yaw)
-        y = self.vehicle.location.local_frame.east * np.cos(self.vehicle.attitude.yaw)
+    def loc_current(self):
+        x= self.vehicle.location.local_frame.north
+        y = self.vehicle.location.local_frame.east
         z = -self.vehicle.location.local_frame.down
 
-        print(x,y,z)
+        return(x,y,z)
