@@ -53,6 +53,7 @@ class Visual_Odometry():
         self.disx = 0
         self.disy = 0
         self.filter = filters.Filters() # initializing the filters class object for low pass filter
+        self.home_location = pix.get_home()
     
 
     def displacement_pixel(self, old_points, new_points, h):
@@ -105,17 +106,22 @@ class Visual_Odometry():
                 [40, 40], dtype=np.float32) # finding features on the frame using Shi Tomasi algorithm, leaving a pixel width of 40 pixels on the border of the frame
             return 0, 0, len(self.p0) #returning the home location and (0, 0) as (dx, dy) as no fetures were tracked in the first call
         
-        if self.rtheta is not None and self.p0 is not None and self.old_gray is None:
+        if self.rtheta is not None and self.p0 is not None and self.old_gray is not None:
             angle = self.rtheta
             # rmatrix = np.array([[np.cos(angle),-np.sin(angle)],[np.sin(angle),np.cos(angle)]])
             print(angle[0],angle[1],angle[2])
-            rmatrix = calc.rotationMatrix3D(angle[0],angle[1],angle[2]) #gets the rotation matrix from the attitude angles
-            self.p0 = np.matmul(self.p0, rmatrix)
+            rmatrix = calc.rotationMatrix(angle[0],angle[1],angle[2]) #gets the rotation matrix from the attitude angles
+            print("the shape of features is " + str(self.p0.dtype))
+            print("the shape of rmatrix is " + str(rmatrix.shape))
+            self.p0 = np.float32(np.matmul(self.p0, rmatrix)) #converting values to float32 as matmul returns float64 but lkpyr accepts float32
+            print("matrix multiplication was succesful")
+            print(self.p0.dtype)
 
 
         # The following part executes from the 2nd call of the function as we now have the old frame and old features
         p1, st, err = cv2.calcOpticalFlowPyrLK(self.old_gray, cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), self.p0, None,
                                                **lk_params) # tracking the old features
+        print("calculated optical flow")
         ndel = [] # list to delete the erroneous features
         n_points = len(p1) # number of features tracked
         status = st.ravel() # status of the features (0 if it is not present in the current frame else 1)
@@ -151,6 +157,9 @@ class Visual_Odometry():
         self.disx += x # updating the current x position
         self.disy += y # updating the current y position
 
+        actx = pix.loc_current_relative()
+        act_distance = calc.get_actual_distance(actx[0],actx[1], actx[2], self.home_location,pix.loc_current())
+
         xlog = str(self.disx) + " " + str(self.disy) + "\n" #log to be written
         log_x.write(xlog) #logginf the distance x and y from home 
         # print("from frame process function x is " + str(self.disx) + " and y is " + str(self.disy))
@@ -166,8 +175,8 @@ class Visual_Odometry():
         # kalx = self.filter.kalman(self.disx)
         # kaly = self.filter.kalman(self.disy)
 
-        # actxlog = str("""actual x """) + " " + str("""actual y """) + str(h) + "\n" #log to be written , actual  position
-        # log_xact.write(actxlog) #logginf the distance x and y from home , actual from pixhawk
+        actxlog = str(act_distance[0]) + " " + str(act_distance[1]) + " " + str(act_distance[2]) + "\n" #log to be written , actual  position
+        log_xact.write(actxlog) #logginf the distance x and y from home , actual from pixhawk
 
         return self.disx, self.disy, n_points
 
@@ -183,11 +192,9 @@ class Visual_Odometry():
       #  print("TIMEEEEEEEEEEEEEE", self.Time)
         # try:
 
-        h = self.initial_height
+        try:
+            h = pix.get_curr_height()
+        except Exception as e:
+            h = self.initial_height
 
         dis_x, dis_y, n_points = self.frame_process(h, log_x, log_xfil, log_xact) # proesssing the video frame ( _test function can be used during simulation.)
-
-
-
-
-

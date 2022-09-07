@@ -1,7 +1,7 @@
 import getx
 import time
 
-height = 75
+height = 0
 
 getxCall = getx.Visual_Odometry(-1,height)
 delta_time=0.1
